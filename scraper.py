@@ -13,8 +13,10 @@ from re import sub
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--verbose", "-v", help="True to enable verbose logging to console", type=bool, required=False, default=True)
-parser.add_argument("--maxPages", "-m", help="Max # of pages to scrape (default 40)", type=int, required=False, default=40)
+parser.add_argument("--verbose", "-v", help="True to enable verbose logging to console",
+                    type=bool, required=False, default=True)
+parser.add_argument("--maxPages", "-m", help="Max # of pages to scrape (default 100)",
+                    type=int, required=False, default=100)
 parser.add_argument("--zumperURL", "-z",
                     help="Pass a zumper url of the form `https://www.zumper.com/apartments-for-rent/san-francisco-ca/2-beds?bathrooms=2`",
                     type=str,
@@ -31,6 +33,7 @@ urls = ["{}&page={}"
 def priceFromListItem(item):
     return int(sub(r"\D", "", str(item.contents)))
 
+
 def fetchPrices():
     all_prices = []
     for url in tqdm(urls):
@@ -39,11 +42,13 @@ def fetchPrices():
             print("Invalid page, ending!")
             break
         soup = bs(r.content, 'html.parser')
-        info_panes = soup.findAll('div', class_="ListItemMobileView_price__1IH5H")
+        info_panes = soup.findAll(
+            'div', class_="ListItemMobileView_price__1IH5H")
+        if(len(info_panes) == 0):
+            print("No more results, ending!")
+            break
         info_panes = map(priceFromListItem, info_panes)
         all_prices.extend(info_panes)
-
-
 
     sum_price = float(sum(all_prices))
     avg_price = sum_price / len(all_prices)
@@ -58,6 +63,7 @@ def fetchPrices():
     logging.info("Num Listings Scraped: {}, Avg Price: {:.2f}. Src: {}".format(
         len(all_prices), avg_price, args.zumperURL
     ))
+
 
 if __name__ == "__main__":
     fetchPrices()
