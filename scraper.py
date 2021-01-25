@@ -7,6 +7,7 @@ import argparse
 from tqdm import tqdm
 import datetime
 import logging
+import statistics
 
 from re import sub
 
@@ -50,19 +51,29 @@ def fetchPrices():
         info_panes = map(priceFromListItem, info_panes)
         all_prices.extend(info_panes)
 
-    sum_price = float(sum(all_prices))
-    avg_price = sum_price / len(all_prices)
-    print("Found {} prices".format(len(all_prices)))
-    print("The average price was ${:.2f}".format(avg_price))
+    # sum_price = float(sum(all_prices))
+    if all_prices:
+        avg_price = statistics.mean(all_prices) # sum_price / len(all_prices)
+        std_dev = statistics.stdev(all_prices)
+        mode = None
+        median = None
+        try:
+            mode = statistics.mode(all_prices)
+            median = statistics.median(all_prices)
+        except statistics.StatisticsError:
+            mode = avg_price
+            print("No mode!")
+        print("Found {} prices".format(len(all_prices)))
+        print("The average price was ${:.2f}".format(avg_price))
 
-    logging.basicConfig(filename="PriceLog.txt",
-                        level=logging.DEBUG,
-                        format='%(levelname)s: %(asctime)s %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S')
+        logging.basicConfig(filename="PriceLog.txt",
+                            level=logging.DEBUG,
+                            format='%(levelname)s: %(asctime)s %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S')
 
-    logging.info("Num Listings Scraped: {}, Avg Price: {:.2f}. Src: {}".format(
-        len(all_prices), avg_price, args.zumperURL
-    ))
+        logging.info("Num Listings Scraped: {}, Avg Price: {:.2f}, StdDev Price: {:.2f}, Median Price: {:.2f}, Mode Price: {:.2f}. Src: {}".format(
+            len(all_prices), avg_price, std_dev, median, mode, args.zumperURL
+        ))
 
 
 if __name__ == "__main__":
